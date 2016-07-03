@@ -12,12 +12,9 @@ module ActiveRecord
         end
       else
         column_type = type_for_attribute(timestamp_column.to_s)
-        column = "#{connection.quote_table_name(collection.table_name)}.#{connection.quote_column_name(timestamp_column)}"
 
-        query = collection
-          .unscope(:select)
-          .select("COUNT(*) AS #{connection.quote_column_name("size")}", "MAX(#{column}) AS timestamp")
-          .unscope(:order)
+        subquery = collection.unscope(:select).select(timestamp_column).to_sql
+        query = "SELECT COUNT(*) AS #{connection.quote_column_name('size')}, MAX(subquery.#{timestamp_column}) AS timestamp FROM (#{subquery}) subquery"
         result = connection.select_one(query)
 
         if result.blank?
